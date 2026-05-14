@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemba Walk TekniPlex</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0a163a;--accent:#3b82f6;--purple:#7c3aed;
+  --bg:#eef2f7;--card:#fff;--text:#111827;--muted:#374151;--border:#e5e7eb;
+  --red:#dc2626;--yellow:#f59e0b;--green:#10b981;--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+
+/* FONDO ANIMADO */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%,rgba(59,130,246,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 110%,rgba(124,58,237,.1) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 50%,rgba(10,22,58,.04) 0%,transparent 70%),
+    #eef2f7;
+  animation:bgPulse 8s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{
+  0%{background-position:0% 0%,100% 100%,50% 50%}
+  100%{background-position:5% 5%,95% 95%,52% 48%}
+}
+
+/* PARTÍCULAS FLOTANTES */
+.particle{
+  position:fixed;border-radius:50%;pointer-events:none;z-index:0;
+  animation:float linear infinite;opacity:0;
+}
+@keyframes float{
+  0%{transform:translateY(110vh) rotate(0deg);opacity:0}
+  10%{opacity:.6}90%{opacity:.4}
+  100%{transform:translateY(-10vh) rotate(720deg);opacity:0}
+}
+
+/* HEADER */
+.header{
+  background:rgba(255,255,255,.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.5);
+  padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 30px rgba(10,22,58,.08);
+  transition:box-shadow .3s;
+}
+.header-shimmer{
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),var(--purple),var(--accent),transparent);
+  background-size:300% auto;animation:shimmer 3s linear infinite;
+}
+@keyframes shimmer{0%{background-position:-100%}100%{background-position:200%}}
+.logo-wrap{position:relative}
+.logo-img{height:30px;transition:transform .3s}
+.logo-img:hover{transform:scale(1.05)}
+.header-title{font-weight:800;font-size:12px;color:var(--primary);text-transform:uppercase;letter-spacing:1px}
+.date-badge{font-size:10px;font-weight:700;color:#1f2937;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);padding:5px 12px;border-radius:20px;letter-spacing:.5px}
+
+/* PROGRESS BAR */
+.progress-wrap{position:sticky;top:64px;z-index:99;padding:10px 20px;background:rgba(238,242,247,.9);backdrop-filter:blur(10px)}
+.progress-label{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.progress-bar-bg{height:4px;background:rgba(59,130,246,.12);border-radius:10px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:10px;transition:width .5s cubic-bezier(.34,1.56,.64,1);width:0%}
+
+/* CONTAINER */
+.container{max-width:600px;margin:0 auto;padding:18px 15px 100px;position:relative;z-index:1}
+
+/* CARDS */
+.card{
+  background:var(--card);border-radius:var(--r);padding:22px;margin-bottom:14px;
+  border:1px solid rgba(255,255,255,.8);
+  box-shadow:0 2px 12px rgba(10,22,58,.06),0 1px 3px rgba(10,22,58,.04);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+  opacity:0;transform:translateY(24px);
+  position:relative;overflow:hidden;
+}
+.card.visible{animation:cardIn .55s cubic-bezier(.22,.61,.36,1) forwards}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+.card:hover{transform:translateY(-3px) scale(1.005);box-shadow:0 12px 36px rgba(10,22,58,.11)}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:var(--r);
+  background:linear-gradient(135deg,rgba(255,255,255,.6) 0%,transparent 50%);
+  pointer-events:none;
+}
+.card.error-card{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08),0 4px 20px rgba(220,38,38,.1)}
+
+/* SECTION ICON */
+.form-title{color:var(--primary);font-weight:800;margin-bottom:18px;font-size:11px;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:10px}
+.section-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.icon-blue{background:linear-gradient(135deg,#dbeafe,#bfdbfe)}
+.icon-red{background:linear-gradient(135deg,#fee2e2,#fecaca)}
+.icon-yellow{background:linear-gradient(135deg,#fef3c7,#fde68a)}
+.icon-green{background:linear-gradient(135deg,#d1fae5,#a7f3d0)}
+.icon-purple{background:linear-gradient(135deg,#ede9fe,#ddd6fe)}
+.icon-teal{background:linear-gradient(135deg,#ccfbf1,#99f6e4)}
+
+/* INPUTS */
+label{display:block;font-size:10px;font-weight:700;color:#1f2937;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{
+  width:100%;padding:13px 15px;border-radius:10px;
+  border:1.5px solid var(--border);background:#f9fafb;
+  font-family:'Barlow',sans-serif;font-size:14px;outline:none;color:#111827;
+  margin-bottom:4px;color:var(--text);
+  transition:all .25s;
+}
+input::placeholder,textarea::placeholder{color:#9ca3af;font-weight:400}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);background:#fff;
+  box-shadow:0 0 0 4px rgba(59,130,246,.1),0 2px 10px rgba(59,130,246,.08);
+  transform:translateY(-1px);
+}
+input.campo-error,select.campo-error,textarea.campo-error{
+  border-color:var(--red);background:#fff5f5;
+  box-shadow:0 0 0 3px rgba(220,38,38,.08);
+  animation:shake .4s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+.error-msg{font-size:10px;color:var(--red);font-weight:700;margin-bottom:8px;display:none;align-items:center;gap:4px}
+.error-msg.visible{display:flex}
+
+/* CHAR COUNTER */
+.char-row{display:flex;justify-content:flex-end;margin-top:-2px;margin-bottom:4px}
+.char-count{font-size:9px;font-weight:700;color:#374151;letter-spacing:.3px;transition:color .3s}
+.char-count.warn{color:var(--yellow)}
+.char-count.limit{color:var(--red)}
+
+/* FOTO */
+.foto-drop{
+  border:2px dashed rgba(59,130,246,.4);border-radius:14px;
+  padding:28px 20px;text-align:center;
+  background:linear-gradient(135deg,#f0f7ff 0%,#f5f3ff 100%);
+  cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  position:relative;overflow:hidden;
+}
+.foto-drop::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(59,130,246,.06),rgba(124,58,237,.06));
+  opacity:0;transition:opacity .3s;
+}
+.foto-drop:hover{border-color:var(--purple);transform:scale(1.02);box-shadow:0 8px 30px rgba(59,130,246,.15)}
+.foto-drop:hover::after{opacity:1}
+.foto-icon-wrap{position:relative;display:inline-block}
+.foto-icon{font-size:40px;transition:transform .4s cubic-bezier(.34,1.56,.64,1);display:block}
+.foto-drop:hover .foto-icon{transform:scale(1.2) rotate(-8deg)}
+.foto-pulse{
+  position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(59,130,246,.3);
+  animation:pulseRing 2s ease-out infinite;
+}
+@keyframes pulseRing{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.foto-label{font-size:11px;font-weight:800;color:var(--primary);margin-top:10px;text-transform:uppercase;letter-spacing:.8px}
+.foto-sub{font-size:10px;color:#374151;margin-top:4px}
+.preview-img{
+  width:100%;max-height:260px;object-fit:contain;
+  border-radius:12px;margin-top:14px;display:none;
+  border:1px solid var(--border);
+  box-shadow:0 4px 20px rgba(0,0,0,.1);
+  animation:imgIn .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes imgIn{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+/* NR SELECTS */
+.nr-card{
+  background:linear-gradient(135deg,#f8faff 0%,#f5f3ff 100%);
+  border:1px solid rgba(59,130,246,.12);border-radius:12px;padding:14px;
+  text-align:center;transition:all .25s;
+}
+.nr-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,.12)}
+.nr-title{font-size:9px;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.nr-card select{background:white;text-align:center;font-weight:700;font-size:16px;border-radius:8px}
+
+/* RIESGO */
+.riesgo-wrap{margin-top:16px;border-radius:14px;overflow:hidden}
+.riesgo-tag{
+  padding:18px 22px;
+  display:flex;justify-content:space-between;align-items:center;font-weight:800;
+  transition:all .5s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;
+}
+.riesgo-tag::before{
+  content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;
+  background:rgba(255,255,255,.15);transition:transform .4s;
+}
+.riesgo-tag:hover::before{transform:scale(2.5)}
+.riesgo-tag.bajo{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46}
+.riesgo-tag.medio{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e}
+.riesgo-tag.alto{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b}
+.riesgo-nr{font-size:38px;font-weight:900;transition:transform .4s cubic-bezier(.34,1.56,.64,1);line-height:1}
+.riesgo-tag:hover .riesgo-nr{transform:scale(1.2)}
+.riesgo-label{font-size:10px;font-weight:700;opacity:1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.riesgo-name{font-size:16px;font-weight:800}
+
+/* BTN */
+.btn-wrap{position:relative}
+.btn-primary{
+  background:linear-gradient(135deg,#0a163a 0%,#1e40af 50%,#4f46e5 100%);
+  color:white;border:none;padding:20px;border-radius:14px;
+  width:100%;font-weight:900;text-transform:uppercase;
+  cursor:pointer;font-size:15px;letter-spacing:1px;
+  box-shadow:0 8px 28px rgba(10,22,58,.3),0 2px 8px rgba(79,70,229,.2);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  position:relative;overflow:hidden;
+}
+.btn-primary::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+  transition:left .6s;
+}
+.btn-primary:hover:not(:disabled)::before{left:100%}
+.btn-primary:hover:not(:disabled){transform:translateY(-3px) scale(1.01);box-shadow:0 16px 40px rgba(10,22,58,.35)}
+.btn-primary:active:not(:disabled){transform:translateY(0) scale(.99)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-glow{
+  position:absolute;inset:-2px;border-radius:16px;z-index:-1;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  filter:blur(10px);opacity:.4;transition:opacity .3s;
+}
+.btn-primary:hover+.btn-glow,.btn-primary:hover~.btn-glow{opacity:.7}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* LOADER */
+#loader-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(10,22,58,.7);backdrop-filter:blur(14px);
+  align-items:center;justify-content:center;
+}
+#loader-overlay.on{display:flex}
+.loader-box{
+  background:white;border-radius:24px;padding:40px 52px;text-align:center;
+  box-shadow:0 32px 80px rgba(0,0,0,.3);
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.75) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.loader-orbit{
+  width:64px;height:64px;position:relative;margin:0 auto 20px;
+}
+.loader-orbit-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:3px solid transparent;
+  border-top-color:var(--accent);
+  animation:spin .9s linear infinite;
+}
+.loader-orbit-ring:nth-child(2){
+  inset:8px;border-top-color:var(--purple);
+  animation-duration:1.2s;animation-direction:reverse;
+}
+.loader-orbit-ring:nth-child(3){
+  inset:16px;border-top-color:#0a163a;
+  animation-duration:.7s;
+}
+.loader-dot{
+  position:absolute;top:50%;left:50%;width:10px;height:10px;
+  background:var(--accent);border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:dotPulse 1s ease-in-out infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes dotPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.5)}}
+.loader-steps{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.loader-step{
+  font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;
+  opacity:.4;transition:opacity .4s,color .4s;
+}
+.loader-step.active{opacity:1;color:var(--primary);font-weight:700}
+.loader-step.done{opacity:.7;color:var(--green)}
+.step-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.loader-title{font-size:17px;font-weight:800;color:var(--primary);margin-bottom:4px}
+.loader-sub{font-size:12px;color:#374151}
+
+/* SUCCESS */
+#success-overlay{
+  display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(10,22,58,.75);backdrop-filter:blur(16px);
+  align-items:center;justify-content:center;overflow:hidden;
+}
+#success-overlay.on{display:flex}
+.confetti-container{position:absolute;inset:0;pointer-events:none}
+.confetti-piece{
+  position:absolute;width:8px;height:8px;border-radius:2px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(-20px) rotate(0);opacity:1}
+  100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+}
+.success-box{
+  background:white;border-radius:28px;padding:48px 56px;
+  text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.35);
+  animation:successIn .6s cubic-bezier(.34,1.56,.64,1);
+  position:relative;z-index:2;max-width:320px;
+}
+@keyframes successIn{from{opacity:0;transform:scale(.6) translateY(40px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.success-ring{
+  width:84px;height:84px;border-radius:50%;
+  background:linear-gradient(135deg,#10b981,#059669);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;
+  box-shadow:0 12px 36px rgba(16,185,129,.4);
+  animation:ringPop .6s .15s cubic-bezier(.34,1.56,.64,1) both;
+  position:relative;
+}
+@keyframes ringPop{from{transform:scale(0) rotate(-180deg)}to{transform:scale(1) rotate(0)}}
+.success-ring::before{
+  content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:3px solid rgba(16,185,129,.3);
+  animation:ringExpand 1.2s .5s ease-out infinite;
+}
+@keyframes ringExpand{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+.check-svg{width:40px;height:40px;stroke:white;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.check-path{stroke-dasharray:55;stroke-dashoffset:55;animation:drawCheck .5s .4s ease forwards}
+@keyframes drawCheck{to{stroke-dashoffset:0}}
+.success-title{font-weight:900;font-size:22px;color:var(--primary);margin-bottom:8px;letter-spacing:-.3px}
+.success-sub{font-size:13px;color:#374151;line-height:1.6}
+.success-id{
+  margin-top:16px;padding:10px 16px;background:#f3f4f6;border-radius:10px;
+  font-size:11px;font-weight:700;color:#1f2937;letter-spacing:.5px;
+}
+
+/* TOAST */
+#toast{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%) translateY(-100px);
+  padding:13px 24px;border-radius:50px;font-size:13px;font-weight:700;
+  display:flex;z-index:1000;
+  box-shadow:0 10px 36px rgba(0,0,0,.2);
+  align-items:center;gap:8px;
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+  opacity:0;pointer-events:none;
+}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.error{background:var(--red);color:#fff}
+#toast.success{background:var(--green);color:#fff}
+#toast.info{background:var(--primary);color:#fff}
+
+/* COMPLETE BADGE */
+.complete-badge{
+  position:absolute;top:14px;right:16px;
+  background:linear-gradient(135deg,#d1fae5,#a7f3d0);
+  color:#065f46;font-size:9px;font-weight:800;
+  padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;
+  opacity:0;transform:scale(.7);transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.complete-badge.show{opacity:1;transform:scale(1)}
+</style>
+</head>
+<body>
+
+<!-- PARTÍCULAS JS generadas abajo -->
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;position:relative">
+    <div class="logo-wrap">
+      <img src="https://www.tekni-plex.com/wp-content/uploads/2021/04/Tekni-Plex_Logo_Main.png" alt="TekniPlex" class="logo-img">
+    </div>
+    <div style="width:1.5px;height:24px;background:var(--border)"></div>
+    <div class="header-title">Gemba Walk</div>
+  </div>
+  <div id="current-date" class="date-badge"></div>
+  <div class="header-shimmer"></div>
+</div>
+
+<!-- BARRA DE PROGRESO -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Progreso del reporte</span>
+    <span id="progress-pct">0%</span>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill"></div></div>
+</div>
+
+<div class="container">
+
+  <!-- DATOS DE PLANTA -->
+  <div class="card" id="card-datos" data-delay="0">
+    <div class="complete-badge" id="badge-datos">✓ Completo</div>
+    <div class="form-title">
+      <div class="section-icon icon-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg></div>
+      Datos de Planta
+    </div>
+    <label>Área o Proceso *</label>
+    <select id="f-area" onchange="limpiarError(this);updateProgress()">
+      <option value="">Seleccionar área...</option>
+      <optgroup label="Producción">
+        <option>Inyección</option><option>Enmangado</option><option>Termoformado</option><option>Impresión</option>
+        <option>Alta Barrera</option><option>Dip-tube</option><option>Flexo</option><option>Troquelado</option>
+        <option>Slitter</option><option>Formado</option><option>Mecanizado</option><option>Moldes inyección</option><option>Extrusión</option>
+      </optgroup>
+      <optgroup label="Logística y Soporte">
+        <option>Almacén de MP</option><option>Almacén de PT</option><option>Mantenimiento</option><option>Calidad</option>
+        <option>Seguridad (EHS)</option><option>Talleres</option><option>Exteriores / Patio</option><option>Oficinas</option><option>Comedor</option>
+      </optgroup>
+    </select>
+    <div class="error-msg" id="err-area">! Selecciona el área o proceso</div>
+
+    <label>Responsable *</label>
+    <input type="text" id="f-resp" placeholder="Nombre completo" oninput="limpiarError(this);updateProgress()">
+    <div class="error-msg" id="err-resp">! Ingresa el nombre del responsable</div>
+
+    <label>Descripción del Hallazgo *</label>
+    <textarea id="f-desc" rows="3" placeholder="¿Qué observaste? Sé lo más específico posible..." oninput="limpiarError(this);updateProgress();charCount(this,'cc-desc',200)" maxlength="200"></textarea>
+    <div class="char-row"><span class="char-count" id="cc-desc">0/200</span></div>
+    <div class="error-msg" id="err-desc">! Describe el hallazgo observado</div>
+  </div>
+
+  <!-- PELIGRO -->
+  <div class="card" id="card-peligro" data-delay="80">
+    <div class="complete-badge" id="badge-peligro">✓ Completo</div>
+    <div class="form-title">
+      <div class="section-icon icon-red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      Peligro Identificado
+    </div>
+    <label>Detalle del Peligro *</label>
+    <textarea id="f-peligro-fuente" rows="3" placeholder="Describe claramente el peligro detectado..." oninput="limpiarError(this);updateProgress();charCount(this,'cc-peligro',250)" maxlength="250"></textarea>
+    <div class="char-row"><span class="char-count" id="cc-peligro">0/250</span></div>
+    <div class="error-msg" id="err-peligro-fuente">! Describe el peligro identificado</div>
+  </div>
+
+  <!-- UBICACIÓN -->
+  <div class="card" id="card-ubicacion" data-delay="160">
+    <div class="complete-badge" id="badge-ubicacion">✓ Completo</div>
+    <div class="form-title">
+      <div class="section-icon icon-yellow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      Ubicación
+    </div>
+    <div class="grid2">
+      <div>
+        <label>Zona *</label>
+        <input type="text" id="f-zona" placeholder="Ej: Pasillo principal" oninput="limpiarError(this);updateProgress()">
+        <div class="error-msg" id="err-zona">! Indica la zona</div>
+      </div>
+      <div>
+        <label>Referencia específica</label>
+        <input type="text" id="f-zona-ref" placeholder="Ej: Columna B">
+      </div>
+    </div>
+  </div>
+
+  <!-- RIESGO -->
+  <div class="card" id="card-riesgo" data-delay="240">
+    <div class="complete-badge" id="badge-riesgo">✓ Completo</div>
+    <div class="form-title">
+      <div class="section-icon icon-purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      Tipo de Riesgo
+    </div>
+    <label>Descripción del Riesgo *</label>
+    <textarea id="f-riesgo-cat" rows="3" placeholder="Describe el tipo de riesgo detectado..." oninput="limpiarError(this);updateProgress();charCount(this,'cc-riesgo',250)" maxlength="250"></textarea>
+    <div class="char-row"><span class="char-count" id="cc-riesgo">0/250</span></div>
+    <div class="error-msg" id="err-riesgo-cat">! Describe el riesgo identificado</div>
+  </div>
+
+  <!-- FOTO -->
+  <div class="card" data-delay="320">
+    <div class="form-title">
+      <div class="section-icon icon-teal"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+      Evidencia Fotográfica
+    </div>
+    <div class="foto-drop" onclick="document.getElementById('f-fotos').click()" id="foto-drop">
+      <input type="file" id="f-fotos" accept="image/*" capture="environment" onchange="procesarFoto(event)" style="display:none">
+      <div class="foto-icon-wrap">
+        <span class="foto-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+        <div class="foto-pulse"></div>
+      </div>
+      <p class="foto-label">Capturar Evidencia</p>
+      <p class="foto-sub">Toca para abrir la cámara</p>
+    </div>
+    <img id="img-preview" class="preview-img">
+  </div>
+
+  <!-- EVALUACIÓN NR -->
+  <div class="card" data-delay="400">
+    <div class="form-title">
+      <div class="section-icon icon-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      Evaluación NR
+    </div>
+    <div class="grid3" style="margin-bottom:18px">
+      <div class="nr-card">
+        <div class="nr-title">Consecuencia</div>
+        <select id="f-cons" onchange="updateRiesgo()">
+          <option value="0">0</option><option value="2">2</option><option value="4">4</option><option value="6">6</option>
+        </select>
+      </div>
+      <div class="nr-card">
+        <div class="nr-title">Probabilidad</div>
+        <select id="f-prob" onchange="updateRiesgo()">
+          <option value="-1">-1</option><option value="0" selected>0</option><option value="1">1</option>
+        </select>
+      </div>
+      <div class="nr-card">
+        <div class="nr-title">Exposición</div>
+        <select id="f-expo" onchange="updateRiesgo()">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        </select>
+      </div>
+    </div>
+    <div class="riesgo-wrap">
+      <div id="riesgo-tag" class="riesgo-tag bajo">
+        <div>
+          <div class="riesgo-label">Nivel de riesgo calculado</div>
+          <div class="riesgo-name" id="riesgo-text">RIESGO BAJO</div>
+        </div>
+        <div class="riesgo-nr" id="riesgo-val">1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-wrap">
+    <button class="btn-primary" id="btn-enviar" onclick="salvar()">
+      Sincronizar con Drive
+    </button>
+    <div class="btn-glow"></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- LOADER -->
+<div id="loader-overlay">
+  <div class="loader-box">
+    <div class="loader-orbit">
+      <div class="loader-orbit-ring"></div>
+      <div class="loader-orbit-ring"></div>
+      <div class="loader-orbit-ring"></div>
+      <div class="loader-dot"></div>
+    </div>
+    <div class="loader-title">Sincronizando</div>
+    <div class="loader-sub">Conectando con Google Drive...</div>
+    <div class="loader-steps">
+      <div class="loader-step active" id="step1"><div class="step-dot"></div>Validando datos del reporte</div>
+      <div class="loader-step" id="step2"><div class="step-dot"></div>Comprimiendo fotografía</div>
+      <div class="loader-step" id="step3"><div class="step-dot"></div>Enviando a Google Sheets</div>
+      <div class="loader-step" id="step4"><div class="step-dot"></div>Confirmando registro</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-overlay">
+  <div class="confetti-container" id="confetti-container"></div>
+  <div class="success-box">
+    <div class="success-ring">
+      <svg class="check-svg" viewBox="0 0 24 24"><path class="check-path" d="M5 12l5 5L20 7"/></svg>
+    </div>
+    <div class="success-title">¡Reporte Guardado!</div>
+    <div class="success-sub">El hallazgo fue registrado exitosamente en Google Drive</div>
+    <div class="success-id" id="success-id">Registro sincronizado</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const URL_WEB='https://script.google.com/macros/s/AKfycby7ETJTOrFsxSi_T2wgDMlFrCEIHLU3DaSsIS6gNloiB5G2ZfNa5J2J0BGNslJ3S9r-/exec';
+let fotoBase64='';
+
+const CAMPOS=[
+  {id:'f-area',err:'err-area',card:'card-datos',badge:'badge-datos'},
+  {id:'f-resp',err:'err-resp',card:'card-datos',badge:'badge-datos'},
+  {id:'f-desc',err:'err-desc',card:'card-datos',badge:'badge-datos'},
+  {id:'f-peligro-fuente',err:'err-peligro-fuente',card:'card-peligro',badge:'badge-peligro'},
+  {id:'f-zona',err:'err-zona',card:'card-ubicacion',badge:'badge-ubicacion'},
+  {id:'f-riesgo-cat',err:'err-riesgo-cat',card:'card-riesgo',badge:'badge-riesgo'}
+];
+
+/* INTERSECTION OBSERVER para cards */
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const delay=parseInt(e.target.dataset.delay||0);
+      setTimeout(()=>e.target.classList.add('visible'),delay);
+      obs.unobserve(e.target);
+    }
+  });
+},{threshold:.1});
+document.querySelectorAll('.card').forEach(c=>obs.observe(c));
+
+/* PARTÍCULAS */
+function makeParticles(){
+  const colors=['#3b82f6','#7c3aed','#10b981','#f59e0b','#0a163a'];
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const s=Math.random()*6+3;
+    p.style.cssText=`
+      width:${s}px;height:${s}px;
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      opacity:${Math.random()*.5+.1};
+      animation-duration:${Math.random()*20+15}s;
+      animation-delay:${Math.random()*10}s;
+    `;
+    document.body.appendChild(p);
+  }
+}
+makeParticles();
+
+/* PROGRESO */
+function updateProgress(){
+  let filled=0;
+  CAMPOS.forEach(c=>{
+    if(document.getElementById(c.id).value.trim())filled++;
+  });
+  const pct=Math.round((filled/CAMPOS.length)*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('progress-pct').textContent=pct+'%';
+  // Badges por sección
+  const sections={
+    'card-datos':['f-area','f-resp','f-desc'],
+    'card-peligro':['f-peligro-fuente'],
+    'card-ubicacion':['f-zona'],
+    'card-riesgo':['f-riesgo-cat']
+  };
+  const badges={'card-datos':'badge-datos','card-peligro':'badge-peligro','card-ubicacion':'badge-ubicacion','card-riesgo':'badge-riesgo'};
+  Object.entries(sections).forEach(([card,ids])=>{
+    const done=ids.every(id=>document.getElementById(id).value.trim());
+    document.getElementById(badges[card]).classList.toggle('show',done);
+  });
+}
+
+/* CHAR COUNTER */
+function charCount(el,counterId,max){
+  const n=el.value.length;
+  const counter=document.getElementById(counterId);
+  counter.textContent=n+'/'+max;
+  counter.className='char-count'+(n>max*.85?' warn':'')+(n>=max?' limit':'');
+}
+
+/* LIMPIAR ERROR */
+function limpiarError(el){
+  el.classList.remove('campo-error');
+  const card=el.closest('.card');
+  if(card&&!card.querySelectorAll('.campo-error').length)card.classList.remove('error-card');
+  const em=document.getElementById(el.id.replace('f-','err-'));
+  if(em)em.classList.remove('visible');
+}
+
+/* VALIDAR */
+function validar(){
+  let ok=true,first=null;
+  CAMPOS.forEach(c=>{
+    const el=document.getElementById(c.id);
+    if(!el.value.trim()){
+      ok=false;
+      el.classList.add('campo-error');
+      document.getElementById(c.err).classList.add('visible');
+      document.getElementById(c.card).classList.add('error-card');
+      if(!first)first=el;
+    }
+  });
+  if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
+  return ok;
+}
+
+/* FOTO */
+function procesarFoto(e){
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const MAX=600; canvas.width=MAX; canvas.height=img.height*(MAX/img.width);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      fotoBase64=canvas.toDataURL('image/jpeg',.65);
+      const prev=document.getElementById('img-preview');
+      prev.src=fotoBase64; prev.style.display='block';
+      document.getElementById('foto-drop').style.display='none';
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* RIESGO */
+function updateRiesgo(){
+  const suma=+document.getElementById('f-cons').value
+            ++document.getElementById('f-prob').value
+            ++document.getElementById('f-expo').value;
+  const tag=document.getElementById('riesgo-tag');
+  let n='bajo'; if(suma>=8)n='alto'; else if(suma>=4)n='medio';
+  tag.className='riesgo-tag '+n;
+  document.getElementById('riesgo-text').textContent='RIESGO '+n.toUpperCase();
+  const v=document.getElementById('riesgo-val');
+  v.style.transform='scale(1.5)';v.textContent=suma;
+  setTimeout(()=>v.style.transform='scale(1)',350);
+}
+
+/* LOADER STEPS */
+function animateSteps(){
+  const steps=['step1','step2','step3','step4'];
+  steps.forEach((s,i)=>{
+    setTimeout(()=>{
+      if(i>0)document.getElementById(steps[i-1]).className='loader-step done';
+      document.getElementById(s).className='loader-step active';
+    },i*600);
+  });
+}
+
+/* CONFETI */
+function launchConfetti(){
+  const container=document.getElementById('confetti-container');
+  container.innerHTML='';
+  const colors=['#3b82f6','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#06b6d4'];
+  for(let i=0;i<60;i++){
+    const p=document.createElement('div');
+    p.className='confetti-piece';
+    const c=colors[Math.floor(Math.random()*colors.length)];
+    const size=Math.random()*10+5;
+    const isCircle=Math.random()>.5;
+    p.style.cssText=`
+      left:${Math.random()*100}%;
+      top:-20px;
+      width:${size}px;height:${size}px;
+      background:${c};
+      border-radius:${isCircle?'50%':'2px'};
+      animation-duration:${Math.random()*2+1.5}s;
+      animation-delay:${Math.random()*.8}s;
+      transform:rotate(${Math.random()*360}deg);
+    `;
+    container.appendChild(p);
+  }
+}
+
+/* VIBRACIÓN DOBLE */
+function vibrar(){
+  if(navigator.vibrate){
+    navigator.vibrate([180,90,180]);
+  }
+}
+
+/* MAIN SUBMIT */
+async function salvar(){
+  if(!validar()){msg('Completa los campos obligatorios','error');return;}
+  const btn=document.getElementById('btn-enviar');
+  btn.disabled=true;
+  document.getElementById('loader-overlay').classList.add('on');
+  animateSteps();
+
+  const h={
+    fecha:new Date().toLocaleString('es-MX'),
+    area:document.getElementById('f-area').value,
+    resp:document.getElementById('f-resp').value,
+    desc:document.getElementById('f-desc').value,
+    zona:document.getElementById('f-zona').value,
+    zona_ref:document.getElementById('f-zona-ref').value||'N/A',
+    peligro_tipo:'Respuesta Abierta',
+    peligro_fuente:document.getElementById('f-peligro-fuente').value,
+    personas_expuestas:'N/A',
+    riesgo_categoria:document.getElementById('f-riesgo-cat').value,
+    accion_requerida:'N/A',medida_control:'N/A',
+    consecuencia:document.getElementById('f-cons').value,
+    probabilidad:document.getElementById('f-prob').value,
+    exposicion:document.getElementById('f-expo').value,
+    total_nr:document.getElementById('riesgo-val').textContent,
+    riesgo_texto:document.getElementById('riesgo-text').textContent,
+    foto:fotoBase64
+  };
+
+  try{
+    const resp=await fetch(URL_WEB,{method:'POST',body:JSON.stringify(h)});
+    const resultado=await resp.json();
+    document.getElementById('loader-overlay').classList.remove('on');
+
+    if(resultado.status==='ok'){
+      const folio='GW-'+Date.now().toString().slice(-6).toUpperCase();
+      document.getElementById('success-id').textContent='Folio: '+folio;
+      launchConfetti();
+      document.getElementById('success-overlay').classList.add('on');
+      vibrar();
+
+      ['f-area','f-resp','f-desc','f-zona','f-zona-ref','f-peligro-fuente','f-riesgo-cat'].forEach(id=>{
+        const el=document.getElementById(id);
+        el.value='';el.classList.remove('campo-error');
+      });
+      ['cc-desc','cc-peligro','cc-riesgo'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){el.textContent=el.textContent.replace(/^\d+/,'0');}
+      });
+      document.querySelectorAll('.card').forEach(c=>c.classList.remove('error-card'));
+      document.querySelectorAll('.error-msg').forEach(m=>m.classList.remove('visible'));
+      document.querySelectorAll('.complete-badge').forEach(b=>b.classList.remove('show'));
+      document.getElementById('img-preview').style.display='none';
+      document.getElementById('foto-drop').style.display='block';
+      fotoBase64='';
+      updateProgress();
+
+      setTimeout(()=>document.getElementById('success-overlay').classList.remove('on'),3200);
+    } else {
+      msg('Error al guardar: '+(resultado.msg||'Intenta de nuevo'),'error');
+    }
+  }catch(e){
+    document.getElementById('loader-overlay').classList.remove('on');
+    msg('Error de conexión. Verifica tu red.','error');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+/* TOAST */
+function msg(m,tipo='info'){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.className=tipo+' show';
+  setTimeout(()=>t.className=tipo,3500);
+}
+
+/* FECHA */
+document.getElementById('current-date').textContent=
+  new Date().toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();
+</script>
+</body>
+</html>
