@@ -224,7 +224,8 @@ input.campo-error,select.campo-error,textarea.campo-error{
 
 /* GRID */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:500px){.grid3{grid-template-columns:1fr;gap:8px}.nr-card{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;text-align:left}.nr-title{margin-bottom:0;flex:1;font-size:11px}.nr-card select{width:auto;min-width:90px;font-size:15px}}
 
 /* LOADER */
 #loader-overlay{
@@ -679,16 +680,20 @@ function procesarFoto(e){
 
 /* RIESGO */
 function updateRiesgo(){
-  const suma=+document.getElementById('f-cons').value
-            ++document.getElementById('f-prob').value
-            ++document.getElementById('f-expo').value;
-  const tag=document.getElementById('riesgo-tag');
-  let n='bajo'; if(suma>=8)n='alto'; else if(suma>=4)n='medio';
-  tag.className='riesgo-tag '+n;
-  document.getElementById('riesgo-text').textContent='RIESGO '+n.toUpperCase();
-  const v=document.getElementById('riesgo-val');
-  v.style.transform='scale(1.5)';v.textContent=suma;
-  setTimeout(()=>v.style.transform='scale(1)',350);
+  const cons = parseInt(document.getElementById('f-cons').value) || 0;
+  const prob = parseInt(document.getElementById('f-prob').value) || 0;
+  const expo = parseInt(document.getElementById('f-expo').value) || 0;
+  const suma = cons + prob + expo;
+  const tag = document.getElementById('riesgo-tag');
+  let n = 'bajo';
+  if(suma >= 8) n = 'alto';
+  else if(suma >= 4) n = 'medio';
+  tag.className = 'riesgo-tag ' + n;
+  document.getElementById('riesgo-text').textContent = 'RIESGO ' + n.toUpperCase();
+  const v = document.getElementById('riesgo-val');
+  v.style.transform = 'scale(1.5)';
+  v.textContent = suma;
+  setTimeout(() => v.style.transform = 'scale(1)', 350);
 }
 
 /* LOADER STEPS */
